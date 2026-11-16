@@ -179,3 +179,10 @@ cython_debug/
 #  refer to https://docs.cursor.com/context/ignore-files
 .cursorignore
 .cursorindexingignore
+# LS CyberShield local development files
+.venv/
+.venv313/
+cybershield.sqlite3
+*.sqlite3-journal
+*.sqlite3-wal
+*.sqlite3-shm
