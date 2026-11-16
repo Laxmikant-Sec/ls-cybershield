@@ -1,11 +1,31 @@
+import os
+
 import streamlit as st
 
-from database import get_dashboard_data, initialize_database, save_investigation
 from detector import analyze_email
+from investigation_store import (
+    get_dashboard_data,
+    initialize_storage,
+    is_public_demo,
+    save_investigation,
+)
 
 
 st.set_page_config(page_title="LS CyberShield | SOC Email Triage", page_icon="🛡️", layout="wide")
-initialize_database()
+
+
+def _public_demo_enabled() -> bool:
+    if "CYBERSHIELD_PUBLIC_DEMO" in os.environ:
+        return is_public_demo()
+    try:
+        cloud_setting = st.secrets.get("CYBERSHIELD_PUBLIC_DEMO")
+    except FileNotFoundError:
+        cloud_setting = None
+    return is_public_demo(cloud_secret=str(cloud_setting) if cloud_setting is not None else None)
+
+
+public_demo = _public_demo_enabled()
+initialize_storage(public_demo, st.session_state)
 
 st.markdown(
     """
@@ -97,7 +117,7 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-counts, investigations = get_dashboard_data()
+counts, investigations = get_dashboard_data(public_demo, st.session_state)
 metric_columns = st.columns(4)
 for column, label, value in zip(
     metric_columns,
@@ -109,7 +129,10 @@ for column, label, value in zip(
 left, right = st.columns([1.25, 1], gap="large")
 with left:
     st.subheader("Synthetic email investigations")
-    st.caption("Every record shown is synthetic training/demo data.")
+    if public_demo:
+        st.caption("Fixed synthetic examples and submissions from this session only.")
+    else:
+        st.caption("Every record shown is synthetic training/demo data.")
     table_rows = [
         {
             "Analyzed (UTC)": item["analyzed_at"].replace("T", " ")[:19],
@@ -135,7 +158,14 @@ with right:
             st.error("Enter a synthetic sender address, subject, and message body.")
         else:
             result = analyze_email(sender, subject, body)
-            save_investigation(sender, subject, result)
+            save_investigation(
+                public_demo,
+                st.session_state,
+                sender,
+                subject,
+                body,
+                result,
+            )
             st.session_state["latest_result"] = result
 
     result = st.session_state.get("latest_result")
@@ -148,4 +178,7 @@ with right:
         st.caption("A clean result means no configured rule matched; it is not a safety guarantee.")
 
 st.divider()
-st.caption("LS CyberShield · Local demo data is stored in `cybershield.sqlite3` on this device.")
+if public_demo:
+    st.caption("Public demo mode · Submissions stay in this Streamlit session and are not saved.")
+else:
+    st.caption("LS CyberShield · Local demo data is stored in `cybershield.sqlite3` on this device.")
