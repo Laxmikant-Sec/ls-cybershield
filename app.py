@@ -97,7 +97,25 @@ st.markdown(
         outline: 3px solid #38bdf8; outline-offset: 2px;
     }
     [data-testid="stDataFrame"] { border: 1px solid var(--line); border-radius: 10px; }
-    [data-testid="stDataFrame"] * { color: var(--ink); }
+    [data-testid="stDataFrame"] [role="gridcell"],
+    [data-testid="stDataFrame"] [role="columnheader"] { color: var(--ink); }
+    [data-testid="stElementToolbar"] {
+        background: #ffffff !important; border: 1px solid #94a3b8 !important;
+        border-radius: 8px; box-shadow: 0 2px 8px #102a4326;
+    }
+    [data-testid="stElementToolbar"] button {
+        background: #ffffff !important; color: #172b4d !important;
+        border: 1px solid transparent !important; border-radius: 6px;
+    }
+    [data-testid="stElementToolbar"] button svg {
+        color: #172b4d !important;
+    }
+    [data-testid="stElementToolbar"] button:hover {
+        background: #e0f2fe !important; color: #0c4a6e !important;
+    }
+    [data-testid="stElementToolbar"] button:focus-visible {
+        outline: 3px solid #0284c7 !important; outline-offset: 2px;
+    }
     </style>
     """,
     unsafe_allow_html=True,
