@@ -144,56 +144,68 @@ for column, label, value in zip(
 ):
     column.metric(label, value)
 
-left, right = st.columns([1.25, 1], gap="large")
-with left:
-    st.subheader("Synthetic email investigations")
-    if public_demo:
-        st.caption("Fixed synthetic examples and submissions from this session only.")
-    else:
-        st.caption("Every record shown is synthetic training/demo data.")
-    table_rows = [
-        {
-            "Analyzed (UTC)": item["analyzed_at"].replace("T", " ")[:19],
-            "Sender": item["sender"],
-            "Subject": item["subject"],
-            "Verdict": item["verdict"],
-            "Risk": f'{item["score"]}/100',
-        }
-        for item in investigations
-    ]
-    st.dataframe(table_rows, use_container_width=True, hide_index=True)
-
-with right:
-    st.subheader("Analyze a synthetic email")
-    with st.form("email_analysis", clear_on_submit=False):
+st.subheader("Analyze a synthetic email")
+with st.form("email_analysis", clear_on_submit=False):
+    sender_column, subject_column = st.columns(2)
+    with sender_column:
         sender = st.text_input("Sender address", placeholder="alerts@training.example")
+    with subject_column:
         subject = st.text_input("Subject", placeholder="Synthetic training example")
-        body = st.text_area("Message body", height=150, placeholder="Paste synthetic text only.")
-        submitted = st.form_submit_button("Analyze email", type="primary", use_container_width=True)
+    body = st.text_area("Message body", height=150, placeholder="Paste synthetic text only.")
+    submitted = st.form_submit_button("Analyze email", type="primary", use_container_width=True)
 
-    if submitted:
-        if not sender.strip() or not subject.strip() or not body.strip():
-            st.error("Enter a synthetic sender address, subject, and message body.")
-        else:
-            result = analyze_email(sender, subject, body)
-            save_investigation(
-                public_demo,
-                st.session_state,
-                sender,
-                subject,
-                body,
-                result,
-            )
-            st.session_state["latest_result"] = result
+if submitted:
+    if not sender.strip() or not subject.strip() or not body.strip():
+        st.error("Enter a synthetic sender address, subject, and message body.")
+    else:
+        result = analyze_email(sender, subject, body)
+        save_investigation(
+            public_demo,
+            st.session_state,
+            sender,
+            subject,
+            body,
+            result,
+        )
+        st.session_state["latest_result"] = result
 
-    result = st.session_state.get("latest_result")
-    if result:
-        st.markdown(f"**{result['verdict']} · Risk score {result['score']}/100**")
-        st.progress(result["score"] / 100)
-        st.markdown("**Rule findings**")
-        for reason in result["reasons"]:
-            st.markdown(f"- {reason}")
-        st.caption("A clean result means no configured rule matched; it is not a safety guarantee.")
+result = st.session_state.get("latest_result")
+if result:
+    st.markdown(f"**{result['verdict']} · Risk score {result['score']}/100**")
+    st.progress(result["score"] / 100)
+    st.markdown("**Rule findings**")
+    for reason in result["reasons"]:
+        st.markdown(f"- {reason}")
+    st.caption("A clean result means no configured rule matched; it is not a safety guarantee.")
+
+st.divider()
+st.subheader("Synthetic email investigations")
+if public_demo:
+    st.caption("Fixed synthetic examples and submissions from this session only.")
+else:
+    st.caption("Every record shown is synthetic training/demo data.")
+table_rows = [
+    {
+        "Analyzed (UTC)": item["analyzed_at"].replace("T", " ")[:19],
+        "Sender": item["sender"],
+        "Subject": item["subject"],
+        "Verdict": item["verdict"],
+        "Risk": f'{item["score"]}/100',
+    }
+    for item in investigations
+]
+st.dataframe(
+    table_rows,
+    use_container_width=True,
+    hide_index=True,
+    column_config={
+        "Analyzed (UTC)": st.column_config.TextColumn(width="medium"),
+        "Sender": st.column_config.TextColumn(width="large"),
+        "Subject": st.column_config.TextColumn(width="large"),
+        "Verdict": st.column_config.TextColumn(width="small"),
+        "Risk": st.column_config.TextColumn(width="small"),
+    },
+)
 
 st.divider()
 if public_demo:
